@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  itineria-backend:
+    # Sostituisci 'tuo-username' con il tuo vero username di Docker Hub
+    image: mpoli777/itineria-backend:latest
+    container_name: itineria-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Watchtower scaricherà automaticamente la nuova immagine quando farai push su GitHub
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 60 --cleanup
