@@ -1,26 +1,56 @@
 version: '3.8'
 
 services:
+  # --- BACKEND ITINERIA ---
+  # Questo è il cuore dell'applicazione Node.js compilata per Raspberry Pi
   itineria-backend:
-    # Sostituisci 'tuo-username' con il tuo vero username di Docker Hub
-    image: mpoli777/itineria-backend:latest
+    # ATTENZIONE: Sostituisci 'tuo-username' con il tuo vero nome utente di Docker Hub
+    image: tuo-username/itineria-backend:latest
     container_name: itineria-backend
     restart: unless-stopped
     ports:
       - "3000:3000"
+    # Carica le variabili segrete (Firebase, LocationIQ, ecc.) dal file .env
     env_file:
       - .env
+    # Verifica che il server risponda correttamente
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/"]
       interval: 30s
       timeout: 10s
       retries: 3
+    # Limita la dimensione dei log per non riempire la memoria del Raspberry
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Watchtower scaricherà automaticamente la nuova immagine quando farai push su GitHub
+  # --- CLOUDFLARE ZERO TRUST TUNNEL ---
+  # Espone il backend in modo sicuro su internet senza aprire porte sul router
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared
+    restart: unless-stopped
+    environment:
+      # Richiede la variabile CLOUDFLARE_TUNNEL_TOKEN nel file .env
+      - TUNNEL_TOKEN=eyJhIjoiOWY4NWEzOWZkM2ZlM2MzNmRiNDBkOTg2ZThkN2ZkZGYiLCJ0IjoiNmYwMjgxZTItMDI4MC00YmVhLWFkYzYtNzA5M2M1YWQwZDdlIiwicyI6IlptRXdOelprWVRVdE1qRTNaUzAwTVRKaExUa3dNelV0T0RZeU5qTTNPVEkzTlRaaCJ9
+    # Avvia il tunnel puntando alla configurazione Zero Trust
+    command: tunnel --no-autoupdate run
+    depends_on:
+      - itineria-backend
+
+  # --- AUTO-UPDATE (WATCHTOWER) ---
+  # Controlla se hai pushato nuove versioni su Docker Hub e aggiorna il Raspberry da solo
   watchtower:
     image: containrrr/watchtower
     container_name: watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+    # Controlla ogni 60 secondi e pulisce le vecchie immagini per risparmiare spazio
     command: --interval 60 --cleanup
+
+
+
+
