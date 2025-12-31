@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # --- BACKEND ITINERIA ---
   # Questo è il cuore dell'applicazione Node.js compilata per Raspberry Pi
